@@ -105,6 +105,14 @@
       }
       loader.load(modelPath, function (gltf) {
         currentModel = gltf.scene;
+
+        // 텍스처가 없다면 기본 색상이나 속성 설정 (예: 회색)
+        currentModel.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({ color: 0x808080 }); // 기본 회색으로 설정
+          }
+        });
+
         currentModel.scale.set(0.5, 0.5, 0.5);
         scene.add(currentModel);
       }, undefined, function (error) {
