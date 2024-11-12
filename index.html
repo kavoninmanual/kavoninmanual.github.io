@@ -102,6 +102,10 @@
     let model; // 현재 로드된 모델을 저장
     let currentModel = null; // 현재 모델 추적
 
+    let isRightClick = false; // 우클릭 상태
+    let isShiftDown = false; // Shift 키가 눌린 상태
+    let prevMousePosition = { x: 0, y: 0 };
+
     // 모델을 로드하는 함수
     function loadModel(modelPath) {
       if (currentModel) {
@@ -135,28 +139,58 @@
       }
     });
 
-    // 마우스 회전 변수
-    let targetRotationX = 0;
-    let targetRotationY = 0;
+    // 마우스 우클릭 이벤트 (모델 회전)
+    document.querySelector('.macbook-frame').addEventListener('mousedown', (event) => {
+      if (event.button === 2) { // 우클릭
+        isRightClick = true;
+        prevMousePosition = { x: event.clientX, y: event.clientY };
+      }
+    });
 
     document.querySelector('.macbook-frame').addEventListener('mousemove', (event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const mouseX = (event.clientX - rect.left) / rect.width * 2 - 1;
-        const mouseY = -(event.clientY - rect.top) / rect.height * 2 + 1;
+      if (isRightClick && currentModel) {
+        const deltaX = event.clientX - prevMousePosition.x;
+        const deltaY = event.clientY - prevMousePosition.y;
 
-        targetRotationX = mouseY;
-        targetRotationY = mouseX;
+        // 모델 회전
+        model.rotation.y += deltaX * 0.01;
+        model.rotation.x += deltaY * 0.01;
+
+        prevMousePosition = { x: event.clientX, y: event.clientY };
+      }
+
+      if (isShiftDown) {
+        const deltaX = event.clientX - prevMousePosition.x;
+        const deltaY = event.clientY - prevMousePosition.y;
+
+        // 카메라 시점 이동
+        camera.position.x -= deltaX * 0.01;
+        camera.position.y += deltaY * 0.01;
+        
+        prevMousePosition = { x: event.clientX, y: event.clientY };
+      }
+    });
+
+    document.querySelector('.macbook-frame').addEventListener('mouseup', () => {
+      isRightClick = false; // 우클릭을 떼면 회전 멈춤
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === "Shift") {
+        isShiftDown = true; // Shift 키 눌림
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.key === "Shift") {
+        isShiftDown = false; // Shift 키 뗌
+      }
     });
 
     function animate() {
-        requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
 
-        if (model) {
-            model.rotation.x += (targetRotationX * Math.PI - model.rotation.x) * 0.05;
-            model.rotation.y += (targetRotationY * Math.PI - model.rotation.y) * 0.05;
-        }
-
-        renderer.render(scene, camera);
+      renderer.render(scene, camera);
     }
 
     animate();
