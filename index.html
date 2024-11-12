@@ -10,7 +10,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f0f0f0;
+      background: linear-gradient(135deg, #f0f0f0, #d0d0d0); /* 회색 그라데이션 */
     }
 
     /* 맥북 스타일 창 */
@@ -34,11 +34,53 @@
       height: 100%;
       display: block;
     }
+
+    /* 모델 선택 버튼들 */
+    .model-selector {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .model-selector button {
+      padding: 10px;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .model-selector button:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* 모델 크기 조정 슬라이더 */
+    .size-slider {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <div class="macbook-frame">
     <canvas id="webgl-canvas"></canvas>
+  </div>
+
+  <div class="model-selector">
+    <button id="model1">모델 1</button>
+    <button id="model2">모델 2</button>
+    <button id="model3">모델 3</button>
+    <button id="model4">모델 4</button>
+    <!-- 모델 크기 조정 슬라이더 -->
+    <input id="size-slider" type="range" min="0.1" max="2" step="0.1" value="0.5" class="size-slider">
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -51,18 +93,46 @@
 
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas') });
     renderer.setSize(1024, 640); // 맥북 창 크기 설정
-    document.getElementById('webgl-canvas').appendChild(renderer.domElement);
+    renderer.setClearColor(0x808080); // 회색 배경으로 설정 (hex 값: 0x808080)
 
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 5, 5).normalize();
     scene.add(light);
 
-    let model;
-    loader.load('./model.glb', function (gltf) {
+    let model; // 현재 로드된 모델을 저장
+    let currentModel = null; // 현재 모델 추적
+
+    // 모델을 로드하는 함수
+    function loadModel(modelPath) {
+      if (currentModel) {
+        scene.remove(currentModel); // 기존 모델 제거
+      }
+
+      loader.load(modelPath, function (gltf) {
         model = gltf.scene;
+
+        // 모델 크기 축소 (기본 크기 0.5)
+        model.scale.set(0.5, 0.5, 0.5); // 모든 축에서 모델 크기를 0.5배 축소
+
         scene.add(model);
-    }, undefined, function (error) {
+        currentModel = model;
+      }, undefined, function (error) {
         console.error('An error happened', error);
+      });
+    }
+
+    // 각 모델을 선택할 수 있도록 버튼 이벤트 추가
+    document.getElementById('model1').addEventListener('click', () => loadModel('./model1.glb'));
+    document.getElementById('model2').addEventListener('click', () => loadModel('./model2.glb'));
+    document.getElementById('model3').addEventListener('click', () => loadModel('./model3.glb'));
+    document.getElementById('model4').addEventListener('click', () => loadModel('./model4.glb'));
+
+    // 크기 조정 슬라이더 이벤트
+    document.getElementById('size-slider').addEventListener('input', (event) => {
+      if (currentModel) {
+        const scaleValue = parseFloat(event.target.value);
+        currentModel.scale.set(scaleValue, scaleValue, scaleValue);  // 모델 크기 조정
+      }
     });
 
     // 마우스 회전 변수
