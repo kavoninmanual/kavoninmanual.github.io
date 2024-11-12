@@ -10,12 +10,13 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: linear-gradient(135deg, #f0f0f0, #d0d0d0);
+      background: linear-gradient(135deg, #f0f0f0, #d0d0d0); /* 회색 그라데이션 */
     }
 
+    /* 맥북 스타일 창 */
     .macbook-frame {
-      width: 1024px;
-      height: 640px;
+      width: 1024px; /* 맥북 크기 */
+      height: 640px; /* 맥북 크기 */
       background: white;
       border-radius: 20px;
       box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.2);
@@ -27,12 +28,14 @@
       align-items: center;
     }
 
+    /* Three.js 캔버스가 들어갈 영역 */
     #webgl-canvas {
       width: 100%;
       height: 100%;
       display: block;
     }
 
+    /* 모델 선택 버튼들 */
     .model-selector {
       position: absolute;
       left: 20px;
@@ -56,6 +59,7 @@
       background-color: #f0f0f0;
     }
 
+    /* 모델 크기 조정 슬라이더 */
     .size-slider {
       margin-top: 20px;
       padding: 10px;
@@ -75,61 +79,69 @@
     <button id="model2">모델 2</button>
     <button id="model3">모델 3</button>
     <button id="model4">모델 4</button>
+    <!-- 모델 크기 조정 슬라이더 -->
     <input id="size-slider" type="range" min="0.1" max="2" step="0.1" value="0.5" class="size-slider">
   </div>
 
-  <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
-    
-    const loader = new GLTFLoader();
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+  <script>
+    const loader = new THREE.GLTFLoader();
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, 1024 / 640, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, 1024 / 640, 0.1, 1000);  // 맥북 크기에 맞춰 비율 설정
     camera.position.z = 5;
 
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas') });
-    renderer.setSize(1024, 640);
-    renderer.setClearColor(0x808080);
+    renderer.setSize(1024, 640); // 맥북 창 크기 설정
+    renderer.setClearColor(0x808080); // 회색 배경으로 설정 (hex 값: 0x808080)
 
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5, 5, 5).normalize();
     scene.add(light);
 
-    let currentModel = null;
-    let isRightClick = false;
-    let isShiftDown = false;
+    let model; // 현재 로드된 모델을 저장
+    let currentModel = null; // 현재 모델 추적
+
+    let isRightClick = false; // 우클릭 상태
+    let isShiftDown = false; // Shift 키가 눌린 상태
     let prevMousePosition = { x: 0, y: 0 };
 
+    // 모델을 로드하는 함수
     function loadModel(modelPath) {
-      if (currentModel) scene.remove(currentModel);
+      if (currentModel) {
+        scene.remove(currentModel); // 기존 모델 제거
+      }
 
-      loader.load(
-        modelPath,
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(0.5, 0.5, 0.5);
-          scene.add(model);
-          currentModel = model;
-        },
-        undefined,
-        (error) => console.error('Error loading model', error)
-      );
+      loader.load(modelPath, function (gltf) {
+        model = gltf.scene;
+
+        // 모델 크기 축소 (기본 크기 0.5)
+        model.scale.set(0.5, 0.5, 0.5); // 모든 축에서 모델 크기를 0.5배 축소
+
+        scene.add(model);
+        currentModel = model;
+      }, undefined, function (error) {
+        console.error('An error happened', error);
+      });
     }
 
+    // 각 모델을 선택할 수 있도록 버튼 이벤트 추가
     document.getElementById('model1').addEventListener('click', () => loadModel('./model1.glb'));
     document.getElementById('model2').addEventListener('click', () => loadModel('./model2.glb'));
     document.getElementById('model3').addEventListener('click', () => loadModel('./model3.glb'));
     document.getElementById('model4').addEventListener('click', () => loadModel('./model4.glb'));
 
+    // 크기 조정 슬라이더 이벤트
     document.getElementById('size-slider').addEventListener('input', (event) => {
       if (currentModel) {
         const scaleValue = parseFloat(event.target.value);
-        currentModel.scale.set(scaleValue, scaleValue, scaleValue);
+        currentModel.scale.set(scaleValue, scaleValue, scaleValue);  // 모델 크기 조정
       }
     });
 
+    // 마우스 우클릭 이벤트 (모델 회전)
     document.querySelector('.macbook-frame').addEventListener('mousedown', (event) => {
-      if (event.button === 2) {
+      if (event.button === 2) { // 우클릭
         isRightClick = true;
         prevMousePosition = { x: event.clientX, y: event.clientY };
       }
@@ -140,8 +152,9 @@
         const deltaX = event.clientX - prevMousePosition.x;
         const deltaY = event.clientY - prevMousePosition.y;
 
-        currentModel.rotation.y += deltaX * 0.01;
-        currentModel.rotation.x += deltaY * 0.01;
+        // 모델 회전
+        model.rotation.y += deltaX * 0.01;
+        model.rotation.x += deltaY * 0.01;
 
         prevMousePosition = { x: event.clientX, y: event.clientY };
       }
@@ -150,6 +163,7 @@
         const deltaX = event.clientX - prevMousePosition.x;
         const deltaY = event.clientY - prevMousePosition.y;
 
+        // 카메라 시점 이동
         camera.position.x -= deltaX * 0.01;
         camera.position.y += deltaY * 0.01;
         
@@ -158,35 +172,43 @@
     });
 
     document.querySelector('.macbook-frame').addEventListener('mouseup', () => {
-      isRightClick = false;
+      isRightClick = false; // 우클릭을 떼면 회전 멈춤
     });
 
     document.addEventListener('keydown', (event) => {
       if (event.key === "Shift") {
-        isShiftDown = true;
+        isShiftDown = true; // Shift 키 눌림
       }
     });
 
     document.addEventListener('keyup', (event) => {
       if (event.key === "Shift") {
-        isShiftDown = false;
+        isShiftDown = false; // Shift 키 뗌
       }
+    });
+
+    // 스크롤 이벤트로 카메라 FOV 조정
+    window.addEventListener('wheel', (event) => {
+      if (event.deltaY < 0) {
+        camera.fov = Math.max(camera.fov - 2, 45); // 확대 (최소값 45)
+      } else {
+        camera.fov = Math.min(camera.fov + 2, 75); // 축소 (최대값 75)
+      }
+      camera.updateProjectionMatrix();
     });
 
     function animate() {
       requestAnimationFrame(animate);
+
       renderer.render(scene, camera);
     }
 
     animate();
 
+    // 창 크기 변경 시 대응
     window.addEventListener('resize', function () {
-      const width = 1024;
-      const height = 640;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    });
-  </script>
-</body>
-</html>
+        const width = 1024;
+        const height = 640;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.update
