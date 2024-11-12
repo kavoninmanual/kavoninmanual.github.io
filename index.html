@@ -211,3 +211,12 @@
         renderer.setSize(width, height);
         camera.aspect = width / height;
         camera.update
+
+  // 창 크기 변경 시 대응
+  window.addEventListener('resize', function () {
+      const width = 1024;
+      const height = 640;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+  });
